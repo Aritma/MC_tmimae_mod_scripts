@@ -7,9 +7,9 @@
 # Such change increase difficulty of scan creation
 # Key materials for scannable modules are picked from vanilla minecraft items
 
-import mods.techguns.Fabricator;
 import crafttweaker.item.IIngredient;
 import crafttweaker.item.IItemStack;
+import mods.techguns.Fabricator;
 
 
 # Remove Scannable item recipes and move them into the fabricator or add new

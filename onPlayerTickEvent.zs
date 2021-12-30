@@ -1,8 +1,7 @@
-import crafttweaker.events.IEventManager;
-import crafttweaker.event.PlayerTickEvent;
-import crafttweaker.player.IPlayer;
 import crafttweaker.entity.IEntityLivingBase;
-import crafttweaker.data.IData;
+import crafttweaker.event.PlayerTickEvent;
+import crafttweaker.events.IEventManager;
+import crafttweaker.player.IPlayer;
 import scripts.radiation.functions.playerRadiationEvent;
 
 # Player event

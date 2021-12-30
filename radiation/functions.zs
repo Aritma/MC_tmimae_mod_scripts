@@ -4,13 +4,13 @@
 # REQUIRE:
 # - Techguns
 
+import crafttweaker.data.IData;
 import crafttweaker.item.IItemStack;
 import crafttweaker.player.IPlayer;
-import crafttweaker.data.IData;
 import crafttweaker.potions.IPotion;
 import crafttweaker.potions.IPotionEffect;
-import scripts.radiation.tables.radProtectionArmor;
 import scripts.radiation.tables.radioactiveItems;
+import scripts.radiation.tables.radProtectionArmor;
 
 
 # Player event. Should be run on onPlayerTick event
@@ -35,7 +35,7 @@ function playerRadiationEvent(player as IPlayer) {
     }
     setRadiationDebufs(player);
     
-    # TODO: Add rad effect slow removal if it exists but no dose is recieved
+    # TODO: Add rad effect slow removal if it exists but no dose is received
     #       Change split dose, reduced_dose and intensity variables
 }
 
@@ -52,7 +52,6 @@ function getEffectiveRadProtection(player as IPlayer) as int{
     var buff_prot as int = 0;
     
     # Armor protection
-    # TODO: Add gas mask and tactical mask
     for key in radProtectionArmor.keys {
         if !(isNull(player.getInventoryStack(36))) {
             if (player.getInventoryStack(36).definition.id).matches(key.definition.id) {
