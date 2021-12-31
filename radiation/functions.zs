@@ -36,13 +36,15 @@ function radiationPlayerLoggedOutEvent(player as IPlayer) {
 # Player onTick radiation event function
 function playerRadiationEvent(player as IPlayer) {
     var dose as double = calculateDose(player);
-    var rad_change as double = getRadRegen(player) + dose;
     var protection as double = getEffectiveRadProtection(player);
     dose -= protection;
+    var rad_change as double = getRadRegen(player);
+    
 
     // exposure
     if (dose > 0) {
         addRadLevel(player, dose as double);
+        rad_change += dose; 
     }
 
     // regeneneration
