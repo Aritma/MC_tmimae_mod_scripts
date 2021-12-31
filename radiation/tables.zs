@@ -10,20 +10,20 @@ import mods.jei.JEI;
 
 
 # Because of typing java errors all values have to be stored as an integer and as a string
-static radioactiveItems as int[IItemStack] = {	
-	<minecraft:iron_ingot:0> : 1,
-	<minecraft:gold_ingot:0> : 2,
-    <minecraft:rotten_flesh:0> : 3,
-    <techguns:itemshared:98> : 4 //TG enriched uranium
+static radioactiveItems as double[IItemStack] = {	
+	<minecraft:iron_ingot:0> : 0.2,
+	<minecraft:gold_ingot:0> : 1.0,
+    <minecraft:rotten_flesh:0> : 1.5,
+    <techguns:itemshared:98> : 4.0 //TG enriched uranium
 };
  
  
 # Item descriptions in format <item> : [tooltip, jei desc.]
 static radioactiveItemDescriptions as string[][IItemStack] = {	
-	<minecraft:iron_ingot:0> : ["Rad.Intensity: 1", "Somehow radioactive iron..."],
-	<minecraft:gold_ingot:0> : ["Rad.Intensity: 2", "Gold cursed by gods of plutonium."],
-    <minecraft:rotten_flesh:0> : ["Rad.Intensity: 3", "Piece of very irradiated corpse."],
-    <techguns:itemshared:98> : ["Rad.Intensity: 4", "Block of a very clean enriched uranium for use in nuclear weapons."] //TG enriched uranium
+	<minecraft:iron_ingot:0> : ["Rad.Intensity: 0.2", "Somehow radioactive iron..."],
+	<minecraft:gold_ingot:0> : ["Rad.Intensity: 1.0", "Gold cursed by gods of plutonium."],
+    <minecraft:rotten_flesh:0> : ["Rad.Intensity: 3.0", "Piece of very irradiated corpse."],
+    <techguns:itemshared:98> : ["Rad.Intensity: 4.0", "Block of a very clean enriched uranium for use in nuclear weapons."] //TG enriched uranium
 };
 
 
