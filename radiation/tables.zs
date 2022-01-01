@@ -4,26 +4,18 @@
 # REQUIRE:
 # - Techguns
 
+import crafttweaker.data.IData;
 import crafttweaker.item.IItemStack;
 import crafttweaker.potions.IPotion;
 import mods.jei.JEI;
 
 
-# Because of typing java errors all values have to be stored as an integer and as a string
-static radioactiveItems as double[IItemStack] = {	
-	<minecraft:iron_ingot:0> : 0.2,
-	<minecraft:gold_ingot:0> : 1.0,
-    <minecraft:rotten_flesh:0> : 1.5,
-    <techguns:itemshared:98> : 4.0 //TG enriched uranium
-};
- 
- 
-# Item descriptions in format <item> : [tooltip, jei desc.]
-static radioactiveItemDescriptions as string[][IItemStack] = {	
-	<minecraft:iron_ingot:0> : ["Rad.Intensity: 0.2", "Somehow radioactive iron..."],
-	<minecraft:gold_ingot:0> : ["Rad.Intensity: 1.0", "Gold cursed by gods of plutonium."],
-    <minecraft:rotten_flesh:0> : ["Rad.Intensity: 3.0", "Piece of very irradiated corpse."],
-    <techguns:itemshared:98> : ["Rad.Intensity: 4.0", "Block of a very clean enriched uranium for use in nuclear weapons."] //TG enriched uranium
+# Radioactive items, each item have additional flavour text for JEI description
+static radioactiveItems as IData[IItemStack] = {
+	<minecraft:iron_ingot:0> : { radlevel: 0.2, description: "Somehow radioactive iron..." },
+	<minecraft:gold_ingot:0> : { radlevel: 1.0, description: "Gold cursed by gods of plutonium." },
+    <minecraft:rotten_flesh:0> : { radlevel: 1.5, description: "Piece of very irradiated corpse." },
+    <techguns:itemshared:98> : { radlevel: 4.0, description: "Block of a very clean enriched uranium for use in nuclear weapons." } //TG enriched uranium
 };
 
 
@@ -79,10 +71,11 @@ static radProtectionArmor as double[IItemStack] = {
 
 
 # Add descriptions to items
-for key in radioactiveItemDescriptions.keys {
-    var rads as string[] = radioactiveItemDescriptions[key];
-    JEI.addDescription(key, rads);
-    key.addTooltip(format.red(rads[0]));
+for key in radioactiveItems.keys {
+    val rads = radioactiveItems[key].radlevel as IData;
+    val desc = radioactiveItems[key].description as IData;
+    JEI.addDescription(key, desc.asString());
+    key.addTooltip(format.red("Rad.Intensity: " + rads.asString()));
 }
 
 

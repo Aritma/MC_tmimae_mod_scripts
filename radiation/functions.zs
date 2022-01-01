@@ -117,8 +117,9 @@ function calculateDose(player as IPlayer) as double {
         for j in 0 to inventorySize as int {
             if !(isNull(player.getInventoryStack(j))) {
                 if ((player.getInventoryStack(j).definition.id).matches(key.definition.id) & player.getInventoryStack(j).metadata == key.metadata) {
-                    if (radioactiveItems[key] > dose) {
-                        dose = radioactiveItems[key] as double;
+                    val item_rads = radioactiveItems[key].radlevel as IData;
+                    if ( item_rads.asDouble() > dose) {
+                        dose = item_rads.asDouble();
                     }
                 }
             }
@@ -218,8 +219,10 @@ function addOrProlongPotionEffect(player as IPlayer, potion as IPotion, duration
 
 # Add debufs based on radiation level (stacking debufs)
 # radiation with messages do not stack
+# radiation duration is reduced to minimum to follow radlevel existence (still need some time to have correct ingame effects like sound.)
 function setRadiationDebufs(player as IPlayer) {
     val default_dur as int = 300;
+    val default_rad_dur as int = 60;
     val debuff_msg as string[] = [
         "You are slightly irradiated.",
         "Your radiation level is to high!",
@@ -228,23 +231,23 @@ function setRadiationDebufs(player as IPlayer) {
     ];
     
     if (gRadiationData[player.name] > 0.0 & gRadiationData[player.name] < 300.0) {
-        addOrProlongPotionEffect(player, <potion:techguns:radiation>, default_dur, 0, debuff_msg[0]);
+        addOrProlongPotionEffect(player, <potion:techguns:radiation>, default_rad_dur, 0, debuff_msg[0]);
     }
     if (gRadiationData[player.name] >= 300.0 & gRadiationData[player.name] < 700.0) {
-        addOrProlongPotionEffect(player, <potion:techguns:radiation>, default_dur, 1, debuff_msg[1]);
+        addOrProlongPotionEffect(player, <potion:techguns:radiation>, default_rad_dur, 1, debuff_msg[1]);
     }
     if (gRadiationData[player.name] >= 300.0) { //No upper limit -> Stacking
         addOrProlongPotionEffect(player, <potion:minecraft:slowness>, default_dur, 1);
         addOrProlongPotionEffect(player, <potion:minecraft:weakness>, default_dur, 1);
     }
     if (gRadiationData[player.name] >= 700.0 & gRadiationData[player.name] < 1200.0) {
-        addOrProlongPotionEffect(player, <potion:techguns:radiation>, default_dur, 2, debuff_msg[2]);
+        addOrProlongPotionEffect(player, <potion:techguns:radiation>, default_rad_dur, 2, debuff_msg[2]);
     }
     if (gRadiationData[player.name] >= 700.0) { //No upper limit -> Stacking
         addOrProlongPotionEffect(player, <potion:minecraft:blindness>, default_dur, 1);
     }
     if (gRadiationData[player.name] >= 1200.0) { //No upper limit -> Stacking
-        addOrProlongPotionEffect(player, <potion:techguns:radiation>, default_dur, 3, debuff_msg[3]);
+        addOrProlongPotionEffect(player, <potion:techguns:radiation>, default_rad_dur, 3, debuff_msg[3]);
         addOrProlongPotionEffect(player, <potion:minecraft:poison>, default_dur, 1);
     }
 }
