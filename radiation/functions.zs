@@ -4,15 +4,21 @@
 # REQUIRE:
 # - Techguns
 
+# TODO:
+# Block radiation
+
 import crafttweaker.data.IData;
 import crafttweaker.formatting.IFormattedText;
 import crafttweaker.item.IItemStack;
 import crafttweaker.player.IPlayer;
 import crafttweaker.potions.IPotion;
 import crafttweaker.potions.IPotionEffect;
+import crafttweaker.potions.IPotionType;
 import crafttweaker.text.IStyle;
 import crafttweaker.text.ITextComponent;
+import scripts.radiation.tables.potionEffectsByName;
 import scripts.radiation.tables.radioactiveItems;
+import scripts.radiation.tables.radEffects;
 import scripts.radiation.tables.radProtectionArmor;
 
 
@@ -51,8 +57,8 @@ function playerRadiationEvent(player as IPlayer) {
     if (getRadLevel(player) > 0.0) {
         setRadiationDebufs(player);
         addRadLevel(player,  getRadRegen(player));
-        // rad info message shows only if there is any relevant change
-        printRads(player, rad_change as double);
+        // rad info message shows only if there is any relevant radiation
+        displayRads(player, rad_change as double);
     }
 }
 
@@ -92,19 +98,27 @@ function saveRadToPlayerNBT(player as IPlayer) {
 }
 
 
-# Print players radiation level and change per tick on screen as a statusMessage
-function printRads(player as IPlayer, rad_change as double) {
+# Display players radiation level and change per tick on screen as a statusMessage
+function displayRads(player as IPlayer, rad_change as double) {
         var change_prefix as string = '+';
         var change_int as int = rad_change as int;
         var change_decimal as int = ((rad_change - (change_int as double))*10) as int;
+        var rad_short as string = "";
+
+        for key in radEffects.keys {
+            if (getRadLevel(player) >= key) {
+                rad_short = "<" + (radEffects[key].str_repr as IData).asString() + ">";
+            }
+        }
 
         if (rad_change < 0) {
             change_prefix = '-';
             change_decimal = -change_decimal;
             change_int = -change_int;
         }
-        player.sendStatusMessage(
-            "RAD: " + (getRadLevel(player) as int) as string + " (" + change_prefix + change_int as string + "." + change_decimal as string + "/tck)");
+
+        val rad_display_msg as string = "RAD: " + (getRadLevel(player) as int) as string + " (" + change_prefix + change_int as string + "." + change_decimal as string + "/tck) " + rad_short;
+        player.sendStatusMessage(format.green(rad_display_msg));            
 }
 
 
@@ -131,7 +145,7 @@ function calculateDose(player as IPlayer) as double {
 
 
 # Regen function. Radiation level is slowly reduced over time naturally
-# Process speed can be increased while anti-rad meds are in effect
+# Regen speed can be increased with anti-rad meds
 # Natural regeneration and meds should work even while player is exposed to active radiation source
 # DEFAULT VALUE: -0.1
 function getRadRegen(player as IPlayer) as double {
@@ -147,35 +161,19 @@ function getRadRegen(player as IPlayer) as double {
 }
 
 
-# TODO:
-# Block radiation
-
-
 # Retrieving effective protection value of players equiped armor
 function getEffectiveRadProtection(player as IPlayer) as double{    
     var final_prot as double = 0.0;
     var buff_prot as int = 0;
+    val itemSlots as int[] = [36,37,38,39]; # vanilla armor
     
     # Armor protection
-    for key in radProtectionArmor.keys {
-        if !(isNull(player.getInventoryStack(36))) {
-            if (player.getInventoryStack(36).definition.id).matches(key.definition.id) {
-                final_prot += radProtectionArmor[key];
-            }
-        }
-        if !(isNull(player.getInventoryStack(37))) {
-            if (player.getInventoryStack(37).definition.id).matches(key.definition.id) {
-                final_prot += radProtectionArmor[key];
-            }
-        }
-        if !(isNull(player.getInventoryStack(38))) {
-            if (player.getInventoryStack(38).definition.id).matches(key.definition.id) {
-                final_prot += radProtectionArmor[key];
-            }
-        }
-        if !(isNull(player.getInventoryStack(39))) {
-            if (player.getInventoryStack(39).definition.id).matches(key.definition.id) {
-                final_prot += radProtectionArmor[key];
+    for slotNum in itemSlots {
+        for key in radProtectionArmor.keys {
+            if !(isNull(player.getInventoryStack(slotNum))) {
+                if (player.getInventoryStack(slotNum).definition.id).matches(key.definition.id) {
+                    final_prot += radProtectionArmor[key];
+                }
             }
         }
     }
@@ -193,7 +191,7 @@ function getEffectiveRadProtection(player as IPlayer) as double{
 # Add or prolongs potion effect on player. Effect is refired only if previous similar effect is finishing it's duration
 # Optional message can be provided to be sent to player
 # duration should be around 300 -> seems like the value is in ticks, 300 is cca. 15 secs (20tcs/sec)
-function addOrProlongPotionEffect(player as IPlayer, potion as IPotion, duration as int, amplifier as int, message as string = '') {
+function addOrProlongPotionEffect(player as IPlayer, potion as IPotion, duration as int, amplifier as int) {
     var dur as int = 0;
     
     if (player.activePotionEffects.length == 0) {
@@ -208,10 +206,6 @@ function addOrProlongPotionEffect(player as IPlayer, potion as IPotion, duration
         if (dur <= 2) {
             player.removePotionEffect(potion);
             player.addPotionEffect(potion.makePotionEffect(duration, amplifier));
-
-            if !(message == '') {
-                player.sendChat(message);
-            }
         }
     }
 }
@@ -221,53 +215,27 @@ function addOrProlongPotionEffect(player as IPlayer, potion as IPotion, duration
 # radiation with messages do not stack
 # radiation duration is reduced to minimum to follow radlevel existence (still need some time to have correct ingame effects like sound.)
 function setRadiationDebufs(player as IPlayer) {
-    val default_dur as int = 300;
-    val default_rad_dur as int = 60;
-    val debuff_msg as string[] = [
-        "You are slightly irradiated.",
-        "Your radiation level is to high!",
-        "Your radiation level reached dangerous values.",
-        "Warning! Lethal radiation level reached!"
-    ];
+    //val rad_limits as double[] = radEffects.keys;
     
-    if (gRadiationData[player.name] > 0.0 & gRadiationData[player.name] < 300.0) {
-        addOrProlongPotionEffect(player, <potion:techguns:radiation>, default_rad_dur, 0, debuff_msg[0]);
+    # default radiation - always use 4 values from array
+    var amp as int = 0;
+    for i, value in radEffects.keys {
+        if (getRadLevel(player) > value) {
+            amp = i;
+        }
     }
-    if (gRadiationData[player.name] >= 300.0 & gRadiationData[player.name] < 700.0) {
-        addOrProlongPotionEffect(player, <potion:techguns:radiation>, default_rad_dur, 1, debuff_msg[1]);
-    }
-    if (gRadiationData[player.name] >= 300.0) { //No upper limit -> Stacking
-        addOrProlongPotionEffect(player, <potion:minecraft:slowness>, default_dur, 1);
-        addOrProlongPotionEffect(player, <potion:minecraft:weakness>, default_dur, 1);
-    }
-    if (gRadiationData[player.name] >= 700.0 & gRadiationData[player.name] < 1200.0) {
-        addOrProlongPotionEffect(player, <potion:techguns:radiation>, default_rad_dur, 2, debuff_msg[2]);
-    }
-    if (gRadiationData[player.name] >= 700.0) { //No upper limit -> Stacking
-        addOrProlongPotionEffect(player, <potion:minecraft:blindness>, default_dur, 1);
-    }
-    if (gRadiationData[player.name] >= 1200.0) { //No upper limit -> Stacking
-        addOrProlongPotionEffect(player, <potion:techguns:radiation>, default_rad_dur, 3, debuff_msg[3]);
-        addOrProlongPotionEffect(player, <potion:minecraft:poison>, default_dur, 1);
-    }
-}
+    addOrProlongPotionEffect(player, <potion:techguns:radiation>, 60, amp);
 
-
-# Add debufs based on radiation level - old debuf for reference
-function old_setRadiationDebufs(player as IPlayer) {
-    for p in player.activePotionEffects {
-        if (p.effectName.matches("techguns.radiation")) {
-            if (p.amplifier >= 0) {
-                player.addPotionEffect(<potion:minecraft:slowness>.makePotionEffect(60, 1));
-            }
-            if (p.amplifier >= 1) {
-                player.addPotionEffect(<potion:minecraft:blindness>.makePotionEffect(60, 1));
-            }
-            if (p.amplifier >= 2) {
-                player.addPotionEffect(<potion:minecraft:weakness>.makePotionEffect(60, 1));
-            }
-            if (p.amplifier >= 3) {
-                player.addPotionEffect(<potion:minecraft:poison>.makePotionEffect(60, 1));
+    # additional effects
+    for key, value in radEffects {
+        if (getRadLevel(player) > key) {
+            for potion in (value.potion_effects as IData).asList() {
+                addOrProlongPotionEffect(
+                    player,
+                    potionEffectsByName[(potion.name as IData).asString()],
+                    (potion.duration as IData).asInt(),
+                    (potion.amplifier as IData).asInt()
+                );
             }
         }
     }

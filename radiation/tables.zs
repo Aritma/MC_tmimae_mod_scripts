@@ -19,12 +19,6 @@ static radioactiveItems as IData[IItemStack] = {
 };
 
 
-# List of radioation healing items
-static radiationHealing as IItemStack[] = [
-    <techguns:radaway>
-];
-
-
 # Techguns protection items definitions, because CT cannot read protection values of techguns
 static radProtectionArmor as double[IItemStack] = {
     <techguns:steam_helmet> : 0.50,
@@ -70,6 +64,44 @@ static radProtectionArmor as double[IItemStack] = {
 };
 
 
+# Radlevel effect - use 4 values only!
+# Potion effects are additional to basic radiation effect (added automatically at defined level)
+# NOTE: When adding new potion effect, its related IPotion reference must be registered in potionEffectByName array below
+static radEffects as IData[double] = {
+    0.0 : {
+        str_repr: "LOW",
+        potion_effects: []      
+    },
+    300.0 : {
+        str_repr: "HIGH",
+        potion_effects: [
+            {name: 'minecraft:weakness', amplifier: 1, duration: 300},
+            {name: 'minecraft:slowness', amplifier: 1, duration: 300}
+        ]
+    },
+    700.0 : {
+        str_repr: "DANGEROUS",
+        potion_effects: [
+            {name: 'minecraft:blindness', amplifier: 1, duration: 300}
+        ]
+    },
+    1200.0 : {
+        str_repr: "LETHAL!",
+        potion_effects: [
+            {name: 'minecraft:poison', amplifier: 1, duration: 300}
+        ]
+    }
+};
+
+# Potion effect table to be able to reference potion effect by name
+static potionEffectsByName as IPotion[string] = {
+    'minecraft:weakness': <potion:minecraft:weakness>,
+    'minecraft:slowness': <potion:minecraft:slowness>,
+    'minecraft:blindness': <potion:minecraft:blindness>,
+    'minecraft:poison': <potion:minecraft:poison>
+};
+
+
 # Add descriptions to items
 for key in radioactiveItems.keys {
     val rads = radioactiveItems[key].radlevel as IData;
@@ -82,12 +114,3 @@ for key in radioactiveItems.keys {
 # Adding note to gasmask, that radresist is fake (because there is no way to modify it now)
 JEI.addDescription(<techguns:gasmask>, "Unfortunately, this mask doesn't provide any radiation protection, even though the manufacturer declares it in included manual.");
 <techguns:gasmask>.addTooltip(format.red("Radiation protection is not working."));
-
-
-# TODO: Set healing items for radiation effect
-# It's not possible to add additional curative items for existing effect.
-# Instead we add radregen to items (if not exists)
-# Each tick of radregen remove any existing radiation effect
-for item in radiationHealing {
-    val TODO as string = "TODO"; 
-}
