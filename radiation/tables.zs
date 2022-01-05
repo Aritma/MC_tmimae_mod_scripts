@@ -11,7 +11,9 @@ import mods.jei.JEI;
 
 
 # Radioactive items, each item have additional flavour text for JEI description
+# If item is a block, it's radiation is also included in block radiation effect
 static radioactiveItems as IData[IItemStack] = {
+    <minecraft:obsidian:0> : { radlevel: 4.0, description: "Testing obsidian radiation..." },
 	<minecraft:iron_ingot:0> : { radlevel: 0.2, description: "Somehow radioactive iron..." },
 	<minecraft:gold_ingot:0> : { radlevel: 1.0, description: "Gold cursed by gods of plutonium." },
     <minecraft:rotten_flesh:0> : { radlevel: 1.5, description: "Piece of very irradiated corpse." },

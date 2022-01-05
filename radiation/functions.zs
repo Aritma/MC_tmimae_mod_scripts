@@ -7,6 +7,9 @@
 # TODO:
 # Block radiation
 
+import crafttweaker.block.IBlockDefinition;
+import crafttweaker.block.IBlock;
+import crafttweaker.world.IWorld;
 import crafttweaker.data.IData;
 import crafttweaker.formatting.IFormattedText;
 import crafttweaker.item.IItemStack;
@@ -16,6 +19,7 @@ import crafttweaker.potions.IPotionEffect;
 import crafttweaker.potions.IPotionType;
 import crafttweaker.text.IStyle;
 import crafttweaker.text.ITextComponent;
+import crafttweaker.util.Position3f;
 import scripts.radiation.tables.potionEffectsByName;
 import scripts.radiation.tables.radioactiveItems;
 import scripts.radiation.tables.radEffects;
@@ -27,6 +31,15 @@ import scripts.radiation.tables.radProtectionArmor;
 static gRadiationData as double[string] = {
     "dummy" : 0.0
 };
+
+# Reference table holding name of block item and its radiation from radioactiveItems array
+# to reduce lenght of block check iteration
+static radBlocks as IItemStack[string] = {};
+for item in radioactiveItems {
+    if (item.isItemBlock) {
+        radBlocks[item.definition.id] = item;
+    }
+}
 
 
 # LoggedIn and LoggedOut player event functions
@@ -42,7 +55,12 @@ function radiationPlayerLoggedOutEvent(player as IPlayer) {
 # Player onTick radiation event function
 function playerRadiationEvent(player as IPlayer) {
     var dose as double = calculateDose(player);
+    var block_dose as double = getRadFromNearBlocks(player);
     var protection as double = getEffectiveRadProtection(player);
+
+    if (block_dose > dose) {
+        dose = block_dose;
+    }
     dose -= protection;
     var rad_change as double = getRadRegen(player);
     
@@ -239,4 +257,63 @@ function setRadiationDebufs(player as IPlayer) {
             }
         }
     }
+}
+
+
+# Distance measure from player to defined position. Output is reduced to 1 decimal.
+function getDistance(player as IPlayer, position as Position3f) as double {
+    val distance as double = pow(
+        pow((player.x as float - position.x as float) as double, 2.0) + 
+        pow((player.y as float - position.y as float) as double, 2.0) +
+        pow((player.z as float - position.z as float) as double, 2.0), 0.5);
+    return (((distance*10) as int) as double)/10 as double;
+}
+
+
+# Scans all blocks in defined range. Return position and IBlock of all radioactive blocks found.
+function scanNearBlocks(player as IPlayer, range as int) as IBlock[Position3f] {
+    val wrld as IWorld = IWorld.getFromID(player.getDimension());
+    var blocks as IBlock[Position3f] = {};
+    for x in (0 - range) to range {
+        for y in (0 - range) to range {
+            for z in (0 - range) to range {
+                val pos = Position3f.create((player.x + x) as float, (player.y + y) as float, (player.z + z) as float);
+                val blck as IBlock = wrld.getBlock(pos);
+                if (radBlocks.keys has blck.definition.id) {
+                    blocks[pos] = blck;
+                }
+            }
+        }
+    }
+    return blocks;
+}
+
+
+# Raturns maximal dose received from nearby radioactive blocks.
+# Max scan range is based on the most radioactive material in radioactiveItems list.
+# Max dose depends on block rad.intensity and distance from block
+function getRadFromNearBlocks(player as IPlayer) as double {
+    var max_dose as double = 0.0;
+    var max_range as double = 0.0;
+
+    for item, data in radioactiveItems {
+        if (data.radlevel > max_range) {
+            max_range = (data.radlevel + 1.0) as double;
+        }
+    }
+
+    for position, block in scanNearBlocks(player, max_range as int) {
+        var rad_item as IItemStack = radBlocks[block.definition.id];
+        var dist as double = getDistance(player, position);
+
+        if (block.meta == rad_item.metadata) {
+            if (dist < radioactiveItems[rad_item].radlevel) {
+                if (max_dose < (radioactiveItems[rad_item].radlevel - dist)) {
+                    max_dose = (radioactiveItems[rad_item].radlevel - dist) as double;
+                }
+            }
+        }
+    }
+
+    return max_dose as double;
 }
