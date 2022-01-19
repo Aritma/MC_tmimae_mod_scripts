@@ -101,7 +101,14 @@ function addRadLevel(player as IPlayer, increment as double) {
 
 # Load/Save radiation_level.
 # Use players NTB to make data persistent
+# If radiation data does not exist (i.g. first player load) default data is added into NBT
 function loadRadFromPlayerNBT(player as IPlayer) {
+    print(player.getNBT() as string);
+    val forge_data_dict = player.getNBT().ForgeData as IData;
+    if (isNull(forge_data_dict)) {
+        gRadiationData[player.name] = 0.0;
+        saveRadToPlayerNBT(player);
+    }
     val loaded_data = player.getNBT().ForgeData.radiation_level as IData;
     if (isNull(loaded_data)) {
         gRadiationData[player.name] = 0.0;
