@@ -51,6 +51,15 @@ function radiationPlayerLoggedOutEvent(player as IPlayer) {
     saveRadToPlayerNBT(player);
 }
 
+# Remove radlevel event and reduce radlevel in half event
+function radiationPlayerRemoveRadiationEvent(player as IPlayer) {
+    setRadLevel(player, 0);
+}
+
+function radiationPlayerHalveRadiationEvent(player as IPlayer) {
+    val radlevel as double = getRadLevel(player);
+    setRadLevel(player, radlevel/2);
+}
 
 # Player onTick radiation event function
 function playerRadiationEvent(player as IPlayer) {
